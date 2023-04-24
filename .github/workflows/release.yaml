@@ -1,0 +1,33 @@
+name: Build and Deploy
+
+on:
+   push:
+      tags:
+         - 'v[0-9]+.[0-9]+.[0-9]+'
+
+   # Allow running manually from the actions tab
+   workflow_dispatch:
+
+concurrency:
+   group: "release"
+   cancel-in-progress: true
+
+jobs:
+   build-and-deploy:
+      runs-on: ubuntu-latest
+      steps:
+         -  uses: actions/checkout@master
+            with:
+               lfs: true
+
+         -  name: Archive Release
+            run: |
+               pushd a-module-stub
+               zip -r ../a-module-stub.zip .
+               popd
+
+         -  name: Upload Release
+            run: |
+               hub release create -a a-module-stub.zip -a a-module-stub/module.json -m "${{ github.ref_name }}"$'\n\n'"Version ${{ github.ref_name }}" ${{ github.ref_name }}
+            env:
+               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
